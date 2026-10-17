@@ -1,0 +1,17 @@
+{
+  "name": "go-unstructured",
+  "description": "Unofficial Go client for the Unstructured Platform and Partition APIs: connectors, workflows, jobs, notifications and document partitioning.",
+  "author": {
+    "name": "psyb0t",
+    "url": "https://github.com/psyb0t"
+  },
+  "homepage": "https://github.com/psyb0t/go-unstructured",
+  "license": "MIT",
+  "keywords": [
+    "unstructured",
+    "documents",
+    "api-client",
+    "go-library",
+    "openapi"
+  ]
+}
