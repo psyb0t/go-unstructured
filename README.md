@@ -67,6 +67,8 @@ The same code is in `example_test.go`, so `make test` checks that it compiles. I
 
 Method names come from spec operation IDs. Platform notification operations have long route-based names; source, destination, workflow and job methods use names such as `ListSourcesWithResponse` and `GetJobWithResponse`.
 
+The full API, with the spec's descriptions as doc comments, is in the [Go reference](https://pkg.go.dev/github.com/psyb0t/go-unstructured) and in `go doc github.com/psyb0t/go-unstructured` (or `.../partition`) from inside your module.
+
 ## Auth
 
 Both APIs send the API key in the `unstructured-api-key` header. The request editor above reads it from `UNSTRUCTURED_API_KEY`. The Platform spec declares optional header parameters; the Partition spec declares an `ApiKeyAuth` header scheme and an anonymous alternative. Set the header explicitly for authenticated requests. Never log the key or a request containing it.

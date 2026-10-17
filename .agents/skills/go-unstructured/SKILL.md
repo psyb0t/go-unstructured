@@ -1,15 +1,14 @@
 ---
 name: go-unstructured
-description: "Write Go code using the unofficial Unstructured Platform and Partition API clients. Package unstructured covers sources, destinations, workflows, jobs, templates, notifications and usage; subpackage partition handles multipart document extraction. Use when Go code needs Unstructured API calls or already imports github.com/psyb0t/go-unstructured."
+description: "Unofficial Go clients for the Unstructured Platform and Partition APIs, generated with oapi-codegen. Package unstructured covers sources, destinations, workflows, jobs, templates, notifications and usage; subpackage partition handles multipart document extraction. Use when Go code needs Unstructured API calls or already imports github.com/psyb0t/go-unstructured."
 homepage: https://github.com/psyb0t/go-unstructured
+license: MIT
 user-invocable: true
 metadata:
   openclaw:
     requires:
       bins:
         - go
-      env:
-        - UNSTRUCTURED_API_KEY
 permissions:
   filesystem: "Guides edits to Go source in the current project. Uploads read only files selected by the user."
   shell: "The Go toolchain adds and compiles the module dependency."
@@ -39,6 +38,22 @@ Read [references/setup.md](references/setup.md) for installation, base URLs, ope
 - The project is not Go.
 - The user needs a client maintained by Unstructured. This module is unofficial.
 - The task changes generated client code. Read the repository's `AGENTS.md` for generation instructions.
+
+## Finding endpoints and types
+
+The usage notes below cover a few calls. Every operation in each spec has a generated method, and the spec's descriptions are on them as Go doc comments. Look names and fields up instead of guessing. After `go get github.com/psyb0t/go-unstructured`, from inside your module:
+
+```bash
+go doc github.com/psyb0t/go-unstructured ClientWithResponsesInterface            # every Platform endpoint method
+go doc github.com/psyb0t/go-unstructured ListSourcesParams                       # one method, params type or model
+go doc -all github.com/psyb0t/go-unstructured                                    # the whole Platform package
+go doc github.com/psyb0t/go-unstructured/partition ClientWithResponsesInterface  # the Partition endpoint method
+go doc github.com/psyb0t/go-unstructured/partition PartitionParameters           # Partition multipart form fields
+```
+
+The same documentation is at https://pkg.go.dev/github.com/psyb0t/go-unstructured.
+
+Method names come from the spec's operation IDs. `<OperationId>WithResponse` takes the context, then the path parameters in order, then `*<OperationId>Params` when the operation has query or header parameters, then the request body when it has one. The `JSON200` field (or `JSON201` and so on, per declared status) holds the decoded body; it is nil for any other status. Operations with multipart bodies (`PartitionWithBodyWithResponse`, `CreateJobWithBodyWithResponse`, `RunWorkflowWithBodyWithResponse`) have only the `WithBody` variant, which takes a content type and an `io.Reader` in place of the typed body.
 
 ## Usage
 

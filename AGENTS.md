@@ -48,7 +48,6 @@ make sec       # gitleaks, govulncheck, semgrep
 - Partition accepts multipart uploads. Use its raw body method with a multipart writer and the writer's content type when sending a file.
 - Method names come from operation IDs. Several notification methods include the full route in their names.
 - `make generate` fetches the latest specs. Review generated changes even when local config did not change. Never edit generated files by hand.
-- Work only inside this workspace. No Git or GitHub mutations, publication or calls to live API operations are authorized for this task.
 - `.github/workflows/regen.yml` regenerates the client every day and releases the result. When the checks fail, Claude edits the repository to fix them, but a fix may not touch the paths listed under `fix_protected_paths` in that workflow: the workflows, the Makefile, `AGENTS.md`, `.agents/rules/`, the lint, security and spec download scripts and their configs. A problem that needs a change there fails the run and needs a manual fix.
 
 ## Rules

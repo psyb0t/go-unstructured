@@ -47,7 +47,7 @@ Each operation has a raw response method on `Client`, a parsed `...WithResponse`
 | `GetJobDetailsWithResponse`, `GetJobFailedFilesWithResponse`, `GetJobFileStatusWithResponse` | `GET /api/v1/jobs/{job_id}/details`, `/failed-files`, `/file-status` |
 | `ListTemplatesWithResponse`, `GetTemplateWithResponse` | `GET /api/v1/templates/`, `/api/v1/templates/{template_id}` |
 
-Connection-check, notification, usage and account consumption operations are also generated. Some notification and usage method names contain the full route from their operation ID. Read `client.gen.go` for their exact names and required parameters.
+Connection-check, notification, usage and account consumption operations are also generated. Some notification and usage method names contain the full route from their operation ID. Look up their exact names and required parameters with `go doc`, as the skill's "Finding endpoints and types" section shows.
 
 Creating a job and running a workflow accept multipart bodies. Build those bodies with a multipart writer and pass the resulting content type, as with Partition uploads below. Their form fields differ; consult the generated request body models before building them.
 
