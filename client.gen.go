@@ -724,6 +724,21 @@ func (e GetAccountConsumedApiV1AccountsAccountIdConsumedGetParamsBreakdown) Vali
 	}
 }
 
+// Defines values for GetAccountConsumedApiV1AccountsAccountIdConsumedGetParamsSplit.
+const (
+	GetAccountConsumedApiV1AccountsAccountIdConsumedGetParamsSplitStrategy GetAccountConsumedApiV1AccountsAccountIdConsumedGetParamsSplit = "strategy"
+)
+
+// Valid indicates whether the value is a known member of the GetAccountConsumedApiV1AccountsAccountIdConsumedGetParamsSplit enum.
+func (e GetAccountConsumedApiV1AccountsAccountIdConsumedGetParamsSplit) Valid() bool {
+	switch e {
+	case GetAccountConsumedApiV1AccountsAccountIdConsumedGetParamsSplitStrategy:
+		return true
+	default:
+		return false
+	}
+}
+
 // AccountConsumed defines model for AccountConsumed.
 type AccountConsumed struct {
 	// AccountId The account the quantity was counted for.
@@ -743,6 +758,12 @@ type AccountConsumed struct {
 
 	// Source Which counter produced the quantity.
 	Source string `json:"source"`
+
+	// Strategies Only with `split=strategy`: `quantity` by strategy, always the five entries `fast`, `hi_res`, `vlm`, `other` and `unattributed`, in that order, summing to `quantity`. Informational: every page counts as one against the licence.
+	Strategies *[]StrategyQuantity `json:"strategies,omitempty"`
+
+	// StrategiesCountedFrom Only with `split=strategy`: from here on every counted page is in the split; pages before it may be `unattributed`. Left out if the split never started.
+	StrategiesCountedFrom *time.Time `json:"strategies_counted_from,omitempty"`
 
 	// Unit Unit of `quantity`. Today only `pages`.
 	Unit string `json:"unit"`
@@ -951,7 +972,7 @@ type CouchbaseSourceConnectorConfigInput struct {
 type CreateDestinationConnector struct {
 	Config CreateDestinationConnector_Config `json:"config"`
 
-	// Key Stable identifier for the destination connector, used for cross-environment export. If omitted, derived from `name` with a 6-hex-digit suffix. Immutable once set. 1-63 characters, lowercase alphanumeric and hyphens, no consecutive/leading/trailing hyphens.
+	// Key Stable identifier for the destination connector, used for cross-environment export. If omitted, derived from `name` with a 6-hex-digit suffix. Editable later through `PUT`. 1-63 characters, lowercase alphanumeric and hyphens, no consecutive/leading/trailing hyphens.
 	//
 	// Example: s3-output-destination
 	Key  *string                         `json:"key,omitempty"`
@@ -999,7 +1020,7 @@ type CreateEmailChannelRequestChannelType string
 type CreateSourceConnector struct {
 	Config CreateSourceConnector_Config `json:"config"`
 
-	// Key Stable identifier for the source connector, used for cross-environment export. If omitted, derived from `name` with a 6-hex-digit suffix. Immutable once set. 1-63 characters, lowercase alphanumeric and hyphens, no consecutive/leading/trailing hyphens.
+	// Key Stable identifier for the source connector, used for cross-environment export. If omitted, derived from `name` with a 6-hex-digit suffix. Editable later through `PUT`. 1-63 characters, lowercase alphanumeric and hyphens, no consecutive/leading/trailing hyphens.
 	//
 	// Example: s3-invoices-source
 	Key  *string                    `json:"key,omitempty"`
@@ -1151,6 +1172,9 @@ type DatabricksVolumesConnectorConfigInput struct {
 type DayQuantity struct {
 	// Quantity Units consumed by the account on that day.
 	Quantity int `json:"quantity"`
+
+	// Strategies Only with `split=strategy`: that day's quantity by strategy.
+	Strategies *[]StrategyQuantity `json:"strategies,omitempty"`
 
 	// UtcDay The UTC day, `YYYY-MM-DD`.
 	UtcDay openapi_types.Date `json:"utc_day"`
@@ -2435,6 +2459,15 @@ type SourceConnectorInformation_Type struct {
 // SourceConnectorType defines model for SourceConnectorType.
 type SourceConnectorType string
 
+// StrategyQuantity defines model for StrategyQuantity.
+type StrategyQuantity struct {
+	// Quantity Pages of that strategy.
+	Quantity int `json:"quantity"`
+
+	// Strategy `fast`, `hi_res`, `vlm`, `other` (every other kind of page) or `unattributed` (pages the split has no record of).
+	Strategy string `json:"strategy"`
+}
+
 // TemplateDetail Full template details including nodes.
 type TemplateDetail struct {
 	Description string         `json:"description"`
@@ -2465,77 +2498,72 @@ type TemplateNode struct {
 
 // TeradataDestinationConnectorConfig defines model for TeradataDestinationConnectorConfig.
 type TeradataDestinationConnectorConfig struct {
-	BatchSize            *int                       `json:"batch_size,omitempty"`
-	ClientId             *string                    `json:"client_id,omitempty"`
-	ClientSecret         *string                    `json:"client_secret,omitempty"`
-	Database             *string                    `json:"database,omitempty"`
-	DbsPort              *int                       `json:"dbs_port,omitempty"`
-	Host                 string                     `json:"host"`
-	Password             *string                    `json:"password,omitempty"`
-	RecordIdKey          *string                    `json:"record_id_key,omitempty"`
-	Scope                *string                    `json:"scope,omitempty"`
-	TableName            *string                    `json:"table_name,omitempty"`
-	Token                *string                    `json:"token,omitempty"`
-	TokenUrl             *string                    `json:"token_url,omitempty"`
+	BatchSize   *int    `json:"batch_size,omitempty"`
+	Database    *string `json:"database,omitempty"`
+	DbsPort     *int    `json:"dbs_port,omitempty"`
+	Host        string  `json:"host"`
+	Password    *string `json:"password,omitempty"`
+	RecordIdKey *string `json:"record_id_key,omitempty"`
+	TableName   *string `json:"table_name,omitempty"`
+
+	// UseSignedInUser Log on to the database as the signed-in Unstructured user, with that user's identity provider token. Takes no other credential.
+	UseSignedInUser      *bool                      `json:"use_signed_in_user,omitempty"`
 	User                 *string                    `json:"user,omitempty"`
 	AdditionalProperties map[string]json.RawMessage `json:"-"`
 }
 
 // TeradataDestinationConnectorConfigInput defines model for TeradataDestinationConnectorConfigInput.
 type TeradataDestinationConnectorConfigInput struct {
-	BatchSize    *int    `json:"batch_size,omitempty"`
-	ClientId     *string `json:"client_id,omitempty"`
-	ClientSecret *string `json:"client_secret,omitempty"`
-	Database     *string `json:"database,omitempty"`
-	DbsPort      *int    `json:"dbs_port,omitempty"`
-	Host         string  `json:"host"`
+	BatchSize *int    `json:"batch_size,omitempty"`
+	Database  *string `json:"database,omitempty"`
+	DbsPort   *int    `json:"dbs_port,omitempty"`
+	Host      string  `json:"host"`
 
 	// MetadataAsJson Write element metadata as one JSON value in the table's `metadata` column. Required for the table the connector creates, which has a single `metadata` column; leave false only for a table with one column per metadata field. Resend it on every update that sends a config: one that omits it sets it back to false.
-	MetadataAsJson       *bool                      `json:"metadata_as_json,omitempty"`
-	Password             *string                    `json:"password,omitempty"`
-	RecordIdKey          *string                    `json:"record_id_key,omitempty"`
-	Scope                *string                    `json:"scope,omitempty"`
-	TableName            *string                    `json:"table_name,omitempty"`
-	Token                *string                    `json:"token,omitempty"`
-	TokenUrl             *string                    `json:"token_url,omitempty"`
+	MetadataAsJson *bool   `json:"metadata_as_json,omitempty"`
+	Password       *string `json:"password,omitempty"`
+	RecordIdKey    *string `json:"record_id_key,omitempty"`
+
+	// SkipEmptyTextElements Drop elements whose text is missing or only whitespace before they are written, so the table has no empty-text rows. This also drops the Extract node's `extracted_data`, which is carried only by such a row (the `DocumentData` element), so it does not reach the table. Resend it on every update that sends a config: one that omits it sets it back to false.
+	SkipEmptyTextElements *bool   `json:"skip_empty_text_elements,omitempty"`
+	TableName             *string `json:"table_name,omitempty"`
+
+	// UseSignedInUser Log on to the database as the signed-in Unstructured user, with that user's identity provider token. Takes no other credential.
+	UseSignedInUser      *bool                      `json:"use_signed_in_user,omitempty"`
 	User                 *string                    `json:"user,omitempty"`
 	AdditionalProperties map[string]json.RawMessage `json:"-"`
 }
 
 // TeradataSourceConnectorConfig defines model for TeradataSourceConnectorConfig.
 type TeradataSourceConnectorConfig struct {
-	BatchSize            *int                       `json:"batch_size,omitempty"`
-	ClientId             *string                    `json:"client_id,omitempty"`
-	ClientSecret         *string                    `json:"client_secret,omitempty"`
-	Database             *string                    `json:"database,omitempty"`
-	DbsPort              *int                       `json:"dbs_port,omitempty"`
-	Fields               *[]string                  `json:"fields,omitempty"`
-	Host                 string                     `json:"host"`
-	IdColumn             *string                    `json:"id_column,omitempty"`
-	Password             *string                    `json:"password,omitempty"`
-	Scope                *string                    `json:"scope,omitempty"`
-	TableName            string                     `json:"table_name"`
-	Token                *string                    `json:"token,omitempty"`
-	TokenUrl             *string                    `json:"token_url,omitempty"`
+	BatchSize *int      `json:"batch_size,omitempty"`
+	Database  *string   `json:"database,omitempty"`
+	DbsPort   *int      `json:"dbs_port,omitempty"`
+	Fields    *[]string `json:"fields,omitempty"`
+	Host      string    `json:"host"`
+	IdColumn  *string   `json:"id_column,omitempty"`
+	Password  *string   `json:"password,omitempty"`
+	TableName string    `json:"table_name"`
+
+	// UseSignedInUser Log on to the database as the signed-in Unstructured user, with that user's identity provider token. Takes no other credential.
+	UseSignedInUser      *bool                      `json:"use_signed_in_user,omitempty"`
 	User                 *string                    `json:"user,omitempty"`
 	AdditionalProperties map[string]json.RawMessage `json:"-"`
 }
 
 // TeradataSourceConnectorConfigInput defines model for TeradataSourceConnectorConfigInput.
 type TeradataSourceConnectorConfigInput struct {
-	BatchSize            *int                       `json:"batch_size,omitempty"`
-	ClientId             *string                    `json:"client_id,omitempty"`
-	ClientSecret         *string                    `json:"client_secret,omitempty"`
-	Database             *string                    `json:"database,omitempty"`
-	DbsPort              *int                       `json:"dbs_port,omitempty"`
-	Fields               *[]string                  `json:"fields,omitempty"`
-	Host                 string                     `json:"host"`
-	IdColumn             *string                    `json:"id_column,omitempty"`
-	Password             *string                    `json:"password,omitempty"`
-	Scope                *string                    `json:"scope,omitempty"`
-	TableName            string                     `json:"table_name"`
-	Token                *string                    `json:"token,omitempty"`
-	TokenUrl             *string                    `json:"token_url,omitempty"`
+	BatchSize *int      `json:"batch_size,omitempty"`
+	Database  *string   `json:"database,omitempty"`
+	DbsPort   *int      `json:"dbs_port,omitempty"`
+	Fields    *[]string `json:"fields,omitempty"`
+	Host      string    `json:"host"`
+	IdColumn  *string   `json:"id_column,omitempty"`
+	Password  *string   `json:"password,omitempty"`
+	TableName string    `json:"table_name"`
+
+	// UseSignedInUser Log on to the database as the signed-in Unstructured user, with that user's identity provider token. Takes no other credential.
+	UseSignedInUser      *bool                      `json:"use_signed_in_user,omitempty"`
 	User                 *string                    `json:"user,omitempty"`
 	AdditionalProperties map[string]json.RawMessage `json:"-"`
 }
@@ -2574,7 +2602,10 @@ type UpdateChannelRequest struct {
 type UpdateDestinationConnector struct {
 	Config UpdateDestinationConnector_Config `json:"config"`
 
-	// Name New display name for the connector. Omit to leave unchanged. The derived `key` is immutable and is not affected by a rename.
+	// Key New key for the connector, unique across sources and destinations in the workspace. Omit to leave unchanged. Requests that address the connector by its old key return 404 after a change; the connector's `id` never changes.
+	Key *string `json:"key,omitempty"`
+
+	// Name New display name for the connector. Omit to leave unchanged. Renaming does not change the connector's `key`.
 	Name *string `json:"name,omitempty"`
 }
 
@@ -2590,7 +2621,10 @@ type UpdateDestinationConnector_Config struct {
 type UpdateSourceConnector struct {
 	Config UpdateSourceConnector_Config `json:"config"`
 
-	// Name New display name for the connector. Omit to leave unchanged. The derived `key` is immutable and is not affected by a rename.
+	// Key New key for the connector, unique across sources and destinations in the workspace. Omit to leave unchanged. Requests that address the connector by its old key return 404 after a change; the connector's `id` never changes.
+	Key *string `json:"key,omitempty"`
+
+	// Name New display name for the connector. Omit to leave unchanged. Renaming does not change the connector's `key`.
 	Name *string `json:"name,omitempty"`
 }
 
@@ -2820,12 +2854,18 @@ type GetAccountConsumedApiV1AccountsAccountIdConsumedGetParams struct {
 	End time.Time `form:"end" json:"end"`
 
 	// Breakdown `day` adds `days`: the quantity for every UTC day in the window, at most 366 days.
-	Breakdown          *GetAccountConsumedApiV1AccountsAccountIdConsumedGetParamsBreakdown `form:"breakdown,omitempty" json:"breakdown,omitempty"`
-	UnstructuredApiKey *string                                                             `json:"unstructured-api-key,omitempty"`
+	Breakdown *GetAccountConsumedApiV1AccountsAccountIdConsumedGetParamsBreakdown `form:"breakdown,omitempty" json:"breakdown,omitempty"`
+
+	// Split `strategy` adds `strategies` to the total, and to each of `days`: pages by processing strategy (`fast`, `hi_res`, `vlm`, `other`, `unattributed`), summing to the quantity they split. Informational: every page counts as one against the licence.
+	Split              *GetAccountConsumedApiV1AccountsAccountIdConsumedGetParamsSplit `form:"split,omitempty" json:"split,omitempty"`
+	UnstructuredApiKey *string                                                         `json:"unstructured-api-key,omitempty"`
 }
 
 // GetAccountConsumedApiV1AccountsAccountIdConsumedGetParamsBreakdown defines parameters for GetAccountConsumedApiV1AccountsAccountIdConsumedGet.
 type GetAccountConsumedApiV1AccountsAccountIdConsumedGetParamsBreakdown string
+
+// GetAccountConsumedApiV1AccountsAccountIdConsumedGetParamsSplit defines parameters for GetAccountConsumedApiV1AccountsAccountIdConsumedGet.
+type GetAccountConsumedApiV1AccountsAccountIdConsumedGetParamsSplit string
 
 // ListDestinationsParams defines parameters for ListDestinations.
 type ListDestinationsParams struct {
@@ -14410,22 +14450,6 @@ func (a *TeradataDestinationConnectorConfig) UnmarshalJSON(b []byte) error {
 		delete(object, "batch_size")
 	}
 
-	if raw, found := object["client_id"]; found {
-		err = json.Unmarshal(raw, &a.ClientId)
-		if err != nil {
-			return fmt.Errorf("error reading 'client_id': %w", err)
-		}
-		delete(object, "client_id")
-	}
-
-	if raw, found := object["client_secret"]; found {
-		err = json.Unmarshal(raw, &a.ClientSecret)
-		if err != nil {
-			return fmt.Errorf("error reading 'client_secret': %w", err)
-		}
-		delete(object, "client_secret")
-	}
-
 	if raw, found := object["database"]; found {
 		err = json.Unmarshal(raw, &a.Database)
 		if err != nil {
@@ -14466,14 +14490,6 @@ func (a *TeradataDestinationConnectorConfig) UnmarshalJSON(b []byte) error {
 		delete(object, "record_id_key")
 	}
 
-	if raw, found := object["scope"]; found {
-		err = json.Unmarshal(raw, &a.Scope)
-		if err != nil {
-			return fmt.Errorf("error reading 'scope': %w", err)
-		}
-		delete(object, "scope")
-	}
-
 	if raw, found := object["table_name"]; found {
 		err = json.Unmarshal(raw, &a.TableName)
 		if err != nil {
@@ -14482,20 +14498,12 @@ func (a *TeradataDestinationConnectorConfig) UnmarshalJSON(b []byte) error {
 		delete(object, "table_name")
 	}
 
-	if raw, found := object["token"]; found {
-		err = json.Unmarshal(raw, &a.Token)
+	if raw, found := object["use_signed_in_user"]; found {
+		err = json.Unmarshal(raw, &a.UseSignedInUser)
 		if err != nil {
-			return fmt.Errorf("error reading 'token': %w", err)
+			return fmt.Errorf("error reading 'use_signed_in_user': %w", err)
 		}
-		delete(object, "token")
-	}
-
-	if raw, found := object["token_url"]; found {
-		err = json.Unmarshal(raw, &a.TokenUrl)
-		if err != nil {
-			return fmt.Errorf("error reading 'token_url': %w", err)
-		}
-		delete(object, "token_url")
+		delete(object, "use_signed_in_user")
 	}
 
 	if raw, found := object["user"]; found {
@@ -14532,20 +14540,6 @@ func (a TeradataDestinationConnectorConfig) MarshalJSON() ([]byte, error) {
 		}
 	}
 
-	if a.ClientId != nil {
-		object["client_id"], err = json.Marshal(a.ClientId)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'client_id': %w", err)
-		}
-	}
-
-	if a.ClientSecret != nil {
-		object["client_secret"], err = json.Marshal(a.ClientSecret)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'client_secret': %w", err)
-		}
-	}
-
 	if a.Database != nil {
 		object["database"], err = json.Marshal(a.Database)
 		if err != nil {
@@ -14579,13 +14573,6 @@ func (a TeradataDestinationConnectorConfig) MarshalJSON() ([]byte, error) {
 		}
 	}
 
-	if a.Scope != nil {
-		object["scope"], err = json.Marshal(a.Scope)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'scope': %w", err)
-		}
-	}
-
 	if a.TableName != nil {
 		object["table_name"], err = json.Marshal(a.TableName)
 		if err != nil {
@@ -14593,17 +14580,10 @@ func (a TeradataDestinationConnectorConfig) MarshalJSON() ([]byte, error) {
 		}
 	}
 
-	if a.Token != nil {
-		object["token"], err = json.Marshal(a.Token)
+	if a.UseSignedInUser != nil {
+		object["use_signed_in_user"], err = json.Marshal(a.UseSignedInUser)
 		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'token': %w", err)
-		}
-	}
-
-	if a.TokenUrl != nil {
-		object["token_url"], err = json.Marshal(a.TokenUrl)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'token_url': %w", err)
+			return nil, fmt.Errorf("error marshaling 'use_signed_in_user': %w", err)
 		}
 	}
 
@@ -14656,22 +14636,6 @@ func (a *TeradataDestinationConnectorConfigInput) UnmarshalJSON(b []byte) error 
 		delete(object, "batch_size")
 	}
 
-	if raw, found := object["client_id"]; found {
-		err = json.Unmarshal(raw, &a.ClientId)
-		if err != nil {
-			return fmt.Errorf("error reading 'client_id': %w", err)
-		}
-		delete(object, "client_id")
-	}
-
-	if raw, found := object["client_secret"]; found {
-		err = json.Unmarshal(raw, &a.ClientSecret)
-		if err != nil {
-			return fmt.Errorf("error reading 'client_secret': %w", err)
-		}
-		delete(object, "client_secret")
-	}
-
 	if raw, found := object["database"]; found {
 		err = json.Unmarshal(raw, &a.Database)
 		if err != nil {
@@ -14720,12 +14684,12 @@ func (a *TeradataDestinationConnectorConfigInput) UnmarshalJSON(b []byte) error 
 		delete(object, "record_id_key")
 	}
 
-	if raw, found := object["scope"]; found {
-		err = json.Unmarshal(raw, &a.Scope)
+	if raw, found := object["skip_empty_text_elements"]; found {
+		err = json.Unmarshal(raw, &a.SkipEmptyTextElements)
 		if err != nil {
-			return fmt.Errorf("error reading 'scope': %w", err)
+			return fmt.Errorf("error reading 'skip_empty_text_elements': %w", err)
 		}
-		delete(object, "scope")
+		delete(object, "skip_empty_text_elements")
 	}
 
 	if raw, found := object["table_name"]; found {
@@ -14736,20 +14700,12 @@ func (a *TeradataDestinationConnectorConfigInput) UnmarshalJSON(b []byte) error 
 		delete(object, "table_name")
 	}
 
-	if raw, found := object["token"]; found {
-		err = json.Unmarshal(raw, &a.Token)
+	if raw, found := object["use_signed_in_user"]; found {
+		err = json.Unmarshal(raw, &a.UseSignedInUser)
 		if err != nil {
-			return fmt.Errorf("error reading 'token': %w", err)
+			return fmt.Errorf("error reading 'use_signed_in_user': %w", err)
 		}
-		delete(object, "token")
-	}
-
-	if raw, found := object["token_url"]; found {
-		err = json.Unmarshal(raw, &a.TokenUrl)
-		if err != nil {
-			return fmt.Errorf("error reading 'token_url': %w", err)
-		}
-		delete(object, "token_url")
+		delete(object, "use_signed_in_user")
 	}
 
 	if raw, found := object["user"]; found {
@@ -14783,20 +14739,6 @@ func (a TeradataDestinationConnectorConfigInput) MarshalJSON() ([]byte, error) {
 		object["batch_size"], err = json.Marshal(a.BatchSize)
 		if err != nil {
 			return nil, fmt.Errorf("error marshaling 'batch_size': %w", err)
-		}
-	}
-
-	if a.ClientId != nil {
-		object["client_id"], err = json.Marshal(a.ClientId)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'client_id': %w", err)
-		}
-	}
-
-	if a.ClientSecret != nil {
-		object["client_secret"], err = json.Marshal(a.ClientSecret)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'client_secret': %w", err)
 		}
 	}
 
@@ -14840,10 +14782,10 @@ func (a TeradataDestinationConnectorConfigInput) MarshalJSON() ([]byte, error) {
 		}
 	}
 
-	if a.Scope != nil {
-		object["scope"], err = json.Marshal(a.Scope)
+	if a.SkipEmptyTextElements != nil {
+		object["skip_empty_text_elements"], err = json.Marshal(a.SkipEmptyTextElements)
 		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'scope': %w", err)
+			return nil, fmt.Errorf("error marshaling 'skip_empty_text_elements': %w", err)
 		}
 	}
 
@@ -14854,17 +14796,10 @@ func (a TeradataDestinationConnectorConfigInput) MarshalJSON() ([]byte, error) {
 		}
 	}
 
-	if a.Token != nil {
-		object["token"], err = json.Marshal(a.Token)
+	if a.UseSignedInUser != nil {
+		object["use_signed_in_user"], err = json.Marshal(a.UseSignedInUser)
 		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'token': %w", err)
-		}
-	}
-
-	if a.TokenUrl != nil {
-		object["token_url"], err = json.Marshal(a.TokenUrl)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'token_url': %w", err)
+			return nil, fmt.Errorf("error marshaling 'use_signed_in_user': %w", err)
 		}
 	}
 
@@ -14917,22 +14852,6 @@ func (a *TeradataSourceConnectorConfig) UnmarshalJSON(b []byte) error {
 		delete(object, "batch_size")
 	}
 
-	if raw, found := object["client_id"]; found {
-		err = json.Unmarshal(raw, &a.ClientId)
-		if err != nil {
-			return fmt.Errorf("error reading 'client_id': %w", err)
-		}
-		delete(object, "client_id")
-	}
-
-	if raw, found := object["client_secret"]; found {
-		err = json.Unmarshal(raw, &a.ClientSecret)
-		if err != nil {
-			return fmt.Errorf("error reading 'client_secret': %w", err)
-		}
-		delete(object, "client_secret")
-	}
-
 	if raw, found := object["database"]; found {
 		err = json.Unmarshal(raw, &a.Database)
 		if err != nil {
@@ -14981,14 +14900,6 @@ func (a *TeradataSourceConnectorConfig) UnmarshalJSON(b []byte) error {
 		delete(object, "password")
 	}
 
-	if raw, found := object["scope"]; found {
-		err = json.Unmarshal(raw, &a.Scope)
-		if err != nil {
-			return fmt.Errorf("error reading 'scope': %w", err)
-		}
-		delete(object, "scope")
-	}
-
 	if raw, found := object["table_name"]; found {
 		err = json.Unmarshal(raw, &a.TableName)
 		if err != nil {
@@ -14997,20 +14908,12 @@ func (a *TeradataSourceConnectorConfig) UnmarshalJSON(b []byte) error {
 		delete(object, "table_name")
 	}
 
-	if raw, found := object["token"]; found {
-		err = json.Unmarshal(raw, &a.Token)
+	if raw, found := object["use_signed_in_user"]; found {
+		err = json.Unmarshal(raw, &a.UseSignedInUser)
 		if err != nil {
-			return fmt.Errorf("error reading 'token': %w", err)
+			return fmt.Errorf("error reading 'use_signed_in_user': %w", err)
 		}
-		delete(object, "token")
-	}
-
-	if raw, found := object["token_url"]; found {
-		err = json.Unmarshal(raw, &a.TokenUrl)
-		if err != nil {
-			return fmt.Errorf("error reading 'token_url': %w", err)
-		}
-		delete(object, "token_url")
+		delete(object, "use_signed_in_user")
 	}
 
 	if raw, found := object["user"]; found {
@@ -15044,20 +14947,6 @@ func (a TeradataSourceConnectorConfig) MarshalJSON() ([]byte, error) {
 		object["batch_size"], err = json.Marshal(a.BatchSize)
 		if err != nil {
 			return nil, fmt.Errorf("error marshaling 'batch_size': %w", err)
-		}
-	}
-
-	if a.ClientId != nil {
-		object["client_id"], err = json.Marshal(a.ClientId)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'client_id': %w", err)
-		}
-	}
-
-	if a.ClientSecret != nil {
-		object["client_secret"], err = json.Marshal(a.ClientSecret)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'client_secret': %w", err)
 		}
 	}
 
@@ -15101,29 +14990,15 @@ func (a TeradataSourceConnectorConfig) MarshalJSON() ([]byte, error) {
 		}
 	}
 
-	if a.Scope != nil {
-		object["scope"], err = json.Marshal(a.Scope)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'scope': %w", err)
-		}
-	}
-
 	object["table_name"], err = json.Marshal(a.TableName)
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling 'table_name': %w", err)
 	}
 
-	if a.Token != nil {
-		object["token"], err = json.Marshal(a.Token)
+	if a.UseSignedInUser != nil {
+		object["use_signed_in_user"], err = json.Marshal(a.UseSignedInUser)
 		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'token': %w", err)
-		}
-	}
-
-	if a.TokenUrl != nil {
-		object["token_url"], err = json.Marshal(a.TokenUrl)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'token_url': %w", err)
+			return nil, fmt.Errorf("error marshaling 'use_signed_in_user': %w", err)
 		}
 	}
 
@@ -15176,22 +15051,6 @@ func (a *TeradataSourceConnectorConfigInput) UnmarshalJSON(b []byte) error {
 		delete(object, "batch_size")
 	}
 
-	if raw, found := object["client_id"]; found {
-		err = json.Unmarshal(raw, &a.ClientId)
-		if err != nil {
-			return fmt.Errorf("error reading 'client_id': %w", err)
-		}
-		delete(object, "client_id")
-	}
-
-	if raw, found := object["client_secret"]; found {
-		err = json.Unmarshal(raw, &a.ClientSecret)
-		if err != nil {
-			return fmt.Errorf("error reading 'client_secret': %w", err)
-		}
-		delete(object, "client_secret")
-	}
-
 	if raw, found := object["database"]; found {
 		err = json.Unmarshal(raw, &a.Database)
 		if err != nil {
@@ -15240,14 +15099,6 @@ func (a *TeradataSourceConnectorConfigInput) UnmarshalJSON(b []byte) error {
 		delete(object, "password")
 	}
 
-	if raw, found := object["scope"]; found {
-		err = json.Unmarshal(raw, &a.Scope)
-		if err != nil {
-			return fmt.Errorf("error reading 'scope': %w", err)
-		}
-		delete(object, "scope")
-	}
-
 	if raw, found := object["table_name"]; found {
 		err = json.Unmarshal(raw, &a.TableName)
 		if err != nil {
@@ -15256,20 +15107,12 @@ func (a *TeradataSourceConnectorConfigInput) UnmarshalJSON(b []byte) error {
 		delete(object, "table_name")
 	}
 
-	if raw, found := object["token"]; found {
-		err = json.Unmarshal(raw, &a.Token)
+	if raw, found := object["use_signed_in_user"]; found {
+		err = json.Unmarshal(raw, &a.UseSignedInUser)
 		if err != nil {
-			return fmt.Errorf("error reading 'token': %w", err)
+			return fmt.Errorf("error reading 'use_signed_in_user': %w", err)
 		}
-		delete(object, "token")
-	}
-
-	if raw, found := object["token_url"]; found {
-		err = json.Unmarshal(raw, &a.TokenUrl)
-		if err != nil {
-			return fmt.Errorf("error reading 'token_url': %w", err)
-		}
-		delete(object, "token_url")
+		delete(object, "use_signed_in_user")
 	}
 
 	if raw, found := object["user"]; found {
@@ -15303,20 +15146,6 @@ func (a TeradataSourceConnectorConfigInput) MarshalJSON() ([]byte, error) {
 		object["batch_size"], err = json.Marshal(a.BatchSize)
 		if err != nil {
 			return nil, fmt.Errorf("error marshaling 'batch_size': %w", err)
-		}
-	}
-
-	if a.ClientId != nil {
-		object["client_id"], err = json.Marshal(a.ClientId)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'client_id': %w", err)
-		}
-	}
-
-	if a.ClientSecret != nil {
-		object["client_secret"], err = json.Marshal(a.ClientSecret)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'client_secret': %w", err)
 		}
 	}
 
@@ -15360,29 +15189,15 @@ func (a TeradataSourceConnectorConfigInput) MarshalJSON() ([]byte, error) {
 		}
 	}
 
-	if a.Scope != nil {
-		object["scope"], err = json.Marshal(a.Scope)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'scope': %w", err)
-		}
-	}
-
 	object["table_name"], err = json.Marshal(a.TableName)
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling 'table_name': %w", err)
 	}
 
-	if a.Token != nil {
-		object["token"], err = json.Marshal(a.Token)
+	if a.UseSignedInUser != nil {
+		object["use_signed_in_user"], err = json.Marshal(a.UseSignedInUser)
 		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'token': %w", err)
-		}
-	}
-
-	if a.TokenUrl != nil {
-		object["token_url"], err = json.Marshal(a.TokenUrl)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'token_url': %w", err)
+			return nil, fmt.Errorf("error marshaling 'use_signed_in_user': %w", err)
 		}
 	}
 
@@ -21001,6 +20816,8 @@ type ClientInterface interface {
 	//
 	// `breakdown=day` adds `days`, the quantity for every UTC day in the window (at most 366 days), for charting; weeks and months roll up from it.
 	//
+	// `split=strategy` adds `strategies`: the pages by processing strategy (`fast`, `hi_res`, `vlm`), with `other` for every other kind of page and `unattributed` for pages counted before the split began (`strategies_counted_from`) or asserted as an opening balance. The five always sum to the quantity they split. The split is informational: the licence counts every page as one, whatever its strategy.
+	//
 	// Call this endpoint at most 15 times per minute for each authenticated identity.
 	//
 	// Corresponds with GET /api/v1/accounts/{account_id}/consumed (the `GetAccountConsumedApiV1AccountsAccountIdConsumedGet` operationId).
@@ -21565,6 +21382,8 @@ type ClientInterface interface {
 // Counted in whole UTC days. Days before the counter began (`counted_from`) count as zero. A window that ends after today answers 503 rather than a smaller number, and so does any failure to read the count: a 200 is never a stand-in for a count that could not be read.
 //
 // `breakdown=day` adds `days`, the quantity for every UTC day in the window (at most 366 days), for charting; weeks and months roll up from it.
+//
+// `split=strategy` adds `strategies`: the pages by processing strategy (`fast`, `hi_res`, `vlm`), with `other` for every other kind of page and `unattributed` for pages counted before the split began (`strategies_counted_from`) or asserted as an opening balance. The five always sum to the quantity they split. The split is informational: the licence counts every page as one, whatever its strategy.
 //
 // Call this endpoint at most 15 times per minute for each authenticated identity.
 //
@@ -22794,6 +22613,18 @@ func NewGetAccountConsumedApiV1AccountsAccountIdConsumedGetRequest(server string
 		if params.Breakdown != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "breakdown", *params.Breakdown, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Split != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "split", *params.Split, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {
@@ -25826,6 +25657,8 @@ type ClientWithResponsesInterface interface {
 	//
 	// `breakdown=day` adds `days`, the quantity for every UTC day in the window (at most 366 days), for charting; weeks and months roll up from it.
 	//
+	// `split=strategy` adds `strategies`: the pages by processing strategy (`fast`, `hi_res`, `vlm`), with `other` for every other kind of page and `unattributed` for pages counted before the split began (`strategies_counted_from`) or asserted as an opening balance. The five always sum to the quantity they split. The split is informational: the licence counts every page as one, whatever its strategy.
+	//
 	// Call this endpoint at most 15 times per minute for each authenticated identity.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -28746,6 +28579,8 @@ func (r RunWorkflowResponse) ContentType() string {
 // Counted in whole UTC days. Days before the counter began (`counted_from`) count as zero. A window that ends after today answers 503 rather than a smaller number, and so does any failure to read the count: a 200 is never a stand-in for a count that could not be read.
 //
 // `breakdown=day` adds `days`, the quantity for every UTC day in the window (at most 366 days), for charting; weeks and months roll up from it.
+//
+// `split=strategy` adds `strategies`: the pages by processing strategy (`fast`, `hi_res`, `vlm`), with `other` for every other kind of page and `unattributed` for pages counted before the split began (`strategies_counted_from`) or asserted as an opening balance. The five always sum to the quantity they split. The split is informational: the licence counts every page as one, whatever its strategy.
 //
 // Call this endpoint at most 15 times per minute for each authenticated identity.
 //

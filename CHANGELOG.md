@@ -2,6 +2,15 @@
 
 All notable changes per release. Versions follow [semver](https://semver.org).
 
+## v0.2.0, 2026-10-21
+
+- Removed the OAuth fields `ClientId`, `ClientSecret`, `Scope`, `Token` and `TokenUrl` from `TeradataSourceConnectorConfig`, `TeradataSourceConnectorConfigInput`, `TeradataDestinationConnectorConfig` and `TeradataDestinationConnectorConfigInput`. The upstream spec no longer has them.
+- Added `UseSignedInUser` to the four Teradata connector config types, and `SkipEmptyTextElements` to `TeradataDestinationConnectorConfigInput`.
+- Added `Key` to `UpdateSourceConnector` and `UpdateDestinationConnector`. The docs for `CreateSourceConnector.Key` and `CreateDestinationConnector.Key` now say the key can be edited later through `PUT`.
+- Added the `Split` parameter to `GetAccountConsumedApiV1AccountsAccountIdConsumedGetParams`, with the type `GetAccountConsumedApiV1AccountsAccountIdConsumedGetParamsSplit` and the value `GetAccountConsumedApiV1AccountsAccountIdConsumedGetParamsSplitStrategy`.
+- Added the `StrategyQuantity` type, and `Strategies` on `AccountConsumed` and `DayQuantity`. Added `AccountConsumed.StrategiesCountedFrom`.
+- Raised the minimum Go version to 1.26.10 in `go.mod`, the dev image and the setup reference, because Go 1.26.9 has the `crypto/x509` flaw GO-2026-6809.
+
 ## v0.1.1, 2026-10-17
 
 - Documentation only. The agent skill explains how to look up every endpoint, parameter and model with `go doc` or on pkg.go.dev, and declares its license.

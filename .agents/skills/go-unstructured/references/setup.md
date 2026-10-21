@@ -4,7 +4,7 @@ This module is unofficial and not affiliated with Unstructured.
 
 ## Requirements
 
-- Go 1.26.9 or newer, as declared in `go.mod`.
+- Go 1.26.10 or newer, as declared in `go.mod`.
 - An Unstructured API key exported as `UNSTRUCTURED_API_KEY`.
 
 ## Install

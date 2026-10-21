@@ -1,6 +1,6 @@
 {
   "name": "go-unstructured",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Unofficial Go client for the Unstructured Platform and Partition APIs: connectors, workflows, jobs, notifications and document partitioning.",
   "author": {
     "name": "psyb0t",

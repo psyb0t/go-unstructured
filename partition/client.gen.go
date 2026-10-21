@@ -218,7 +218,7 @@ type PartitionParameters struct {
 	// OutputFormat The format of the response. Supported formats are application/json and text/csv. Default: application/json.
 	OutputFormat *PartitionParametersOutputFormat `json:"output_format,omitempty"`
 
-	// Overlap Specifies the length of a string ('tail') to be drawn from each chunk and prefixed to the next chunk as a context-preserving mechanism. By default, this only applies to split-chunks where an oversized element is divided into multiple chunks by text-splitting. Default: 0
+	// Overlap Specifies the length of a string ('tail') to be drawn from each chunk and prefixed to the next chunk as a context-preserving mechanism. By default, this only applies to split-chunks where an oversized element is divided into multiple chunks by text-splitting. Must be >= 0 and less than max_characters. Default: 0
 	Overlap *int `json:"overlap,omitempty"`
 
 	// OverlapAll When `True`, apply overlap between 'normal' chunks formed from whole elements and not subject to text-splitting. Use this with caution as it entails a certain level of 'pollution' of otherwise clean semantic chunk boundaries. Default: False
