@@ -1096,6 +1096,15 @@ type CreateWorkflow struct {
 // CreateWorkflowSchedule defines model for CreateWorkflow.Schedule.
 type CreateWorkflowSchedule string
 
+// CredentialAccount defines model for CredentialAccount.
+type CredentialAccount struct {
+	// AccountId The account the credential's workspace belongs to.
+	AccountId int `json:"account_id"`
+
+	// WorkspaceId The workspace the credential acts in.
+	WorkspaceId int `json:"workspace_id"`
+}
+
 // CronTabEntry defines model for CronTabEntry.
 type CronTabEntry struct {
 	CronExpression string `json:"cron_expression"`
@@ -2840,6 +2849,11 @@ type ZendeskSourceConnectorConfigInput struct {
 	ItemType             *string                    `json:"item_type,omitempty"`
 	Subdomain            string                     `json:"subdomain"`
 	AdditionalProperties map[string]json.RawMessage `json:"-"`
+}
+
+// GetCredentialAccountApiV1AccountGetParams defines parameters for GetCredentialAccountApiV1AccountGet.
+type GetCredentialAccountApiV1AccountGetParams struct {
+	UnstructuredApiKey *string `json:"unstructured-api-key,omitempty"`
 }
 
 // GetAccountConsumedApiV1AccountsAccountIdConsumedGetParams defines parameters for GetAccountConsumedApiV1AccountsAccountIdConsumedGet.
@@ -20806,6 +20820,19 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 // The interface specification for the client above.
 type ClientInterface interface {
 
+	// GetCredentialAccountApiV1AccountGet Account and workspace of this credential
+	//
+	// The workspace the credential acts in and the account that workspace belongs to. Use `account_id` with the account-scoped routes, such as `/api/v1/accounts/{account_id}/consumed`.
+	//
+	// Authenticate with an API key, or a bearer token of a member who can read the workspace's metadata. With a bearer token the workspace is the token's own or the one named in `X-Workspace-Id`. Nothing about any other workspace or account is returned.
+	//
+	// A workspace that belongs to no account answers 403, and a failure to look the account up answers 503.
+	//
+	// Call this endpoint at most 15 times per minute for each authenticated identity.
+	//
+	// Corresponds with GET /api/v1/account (the `GetCredentialAccountApiV1AccountGet` operationId).
+	GetCredentialAccountApiV1AccountGet(ctx context.Context, params *GetCredentialAccountApiV1AccountGetParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetAccountConsumedApiV1AccountsAccountIdConsumedGet Licence-enforced consumption for an account
 	//
 	// Units an account consumed over a window: the number its licence allowance is enforced against, summed over every workspace of the account.
@@ -21371,6 +21398,29 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /api/v1/workflows/{workflow_id}/run (the `RunWorkflow` operationId).
 	RunWorkflowWithBody(ctx context.Context, workflowId string, params *RunWorkflowParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+// GetCredentialAccountApiV1AccountGet Account and workspace of this credential
+//
+// The workspace the credential acts in and the account that workspace belongs to. Use `account_id` with the account-scoped routes, such as `/api/v1/accounts/{account_id}/consumed`.
+//
+// Authenticate with an API key, or a bearer token of a member who can read the workspace's metadata. With a bearer token the workspace is the token's own or the one named in `X-Workspace-Id`. Nothing about any other workspace or account is returned.
+//
+// A workspace that belongs to no account answers 403, and a failure to look the account up answers 503.
+//
+// Call this endpoint at most 15 times per minute for each authenticated identity.
+//
+// Corresponds with GET /api/v1/account (the `GetCredentialAccountApiV1AccountGet` operationId).
+func (c *Client) GetCredentialAccountApiV1AccountGet(ctx context.Context, params *GetCredentialAccountApiV1AccountGetParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetCredentialAccountApiV1AccountGetRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 // GetAccountConsumedApiV1AccountsAccountIdConsumedGet Licence-enforced consumption for an account
@@ -22549,6 +22599,48 @@ func (c *Client) RunWorkflowWithBody(ctx context.Context, workflowId string, par
 		return nil, err
 	}
 	return c.Client.Do(req)
+}
+
+// NewGetCredentialAccountApiV1AccountGetRequest constructs an http.Request for the GetCredentialAccountApiV1AccountGet method
+func NewGetCredentialAccountApiV1AccountGetRequest(server string, params *GetCredentialAccountApiV1AccountGetParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/account")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.UnstructuredApiKey != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithOptions("simple", false, "unstructured-api-key", *params.UnstructuredApiKey, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("unstructured-api-key", headerParam0)
+		}
+
+	}
+
+	return req, nil
 }
 
 // NewGetAccountConsumedApiV1AccountsAccountIdConsumedGetRequest constructs an http.Request for the GetAccountConsumedApiV1AccountsAccountIdConsumedGet method
@@ -25647,6 +25739,21 @@ func WithBaseURL(baseURL string) ClientOption {
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
 
+	// GetCredentialAccountApiV1AccountGetWithResponse Account and workspace of this credential
+	//
+	// The workspace the credential acts in and the account that workspace belongs to. Use `account_id` with the account-scoped routes, such as `/api/v1/accounts/{account_id}/consumed`.
+	//
+	// Authenticate with an API key, or a bearer token of a member who can read the workspace's metadata. With a bearer token the workspace is the token's own or the one named in `X-Workspace-Id`. Nothing about any other workspace or account is returned.
+	//
+	// A workspace that belongs to no account answers 403, and a failure to look the account up answers 503.
+	//
+	// Call this endpoint at most 15 times per minute for each authenticated identity.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /api/v1/account (the `GetCredentialAccountApiV1AccountGet` operationId).
+	GetCredentialAccountApiV1AccountGetWithResponse(ctx context.Context, params *GetCredentialAccountApiV1AccountGetParams, reqEditors ...RequestEditorFn) (*GetCredentialAccountApiV1AccountGetResponse, error)
+
 	// GetAccountConsumedApiV1AccountsAccountIdConsumedGetWithResponse Licence-enforced consumption for an account
 	//
 	// Units an account consumed over a window: the number its licence allowance is enforced against, summed over every workspace of the account.
@@ -26278,6 +26385,54 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /api/v1/workflows/{workflow_id}/run (the `RunWorkflow` operationId).
 	RunWorkflowWithBodyWithResponse(ctx context.Context, workflowId string, params *RunWorkflowParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RunWorkflowResponse, error)
+}
+
+type GetCredentialAccountApiV1AccountGetResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *CredentialAccount
+	// JSON422 the response for an HTTP 422 `application/json` response
+	JSON422 *HTTPValidationError
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetCredentialAccountApiV1AccountGetResponse) GetJSON200() *CredentialAccount {
+	return r.JSON200
+}
+
+// GetJSON422 returns the response for an HTTP 422 `application/json` response
+func (r GetCredentialAccountApiV1AccountGetResponse) GetJSON422() *HTTPValidationError {
+	return r.JSON422
+}
+
+// GetBody returns the raw response body bytes
+func (r GetCredentialAccountApiV1AccountGetResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetCredentialAccountApiV1AccountGetResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetCredentialAccountApiV1AccountGetResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetCredentialAccountApiV1AccountGetResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
 }
 
 type GetAccountConsumedApiV1AccountsAccountIdConsumedGetResponse struct {
@@ -28570,6 +28725,27 @@ func (r RunWorkflowResponse) ContentType() string {
 	return ""
 }
 
+// GetCredentialAccountApiV1AccountGetWithResponse Account and workspace of this credential
+//
+// The workspace the credential acts in and the account that workspace belongs to. Use `account_id` with the account-scoped routes, such as `/api/v1/accounts/{account_id}/consumed`.
+//
+// Authenticate with an API key, or a bearer token of a member who can read the workspace's metadata. With a bearer token the workspace is the token's own or the one named in `X-Workspace-Id`. Nothing about any other workspace or account is returned.
+//
+// A workspace that belongs to no account answers 403, and a failure to look the account up answers 503.
+//
+// Call this endpoint at most 15 times per minute for each authenticated identity.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /api/v1/account (the `GetCredentialAccountApiV1AccountGet` operationId).
+func (c *ClientWithResponses) GetCredentialAccountApiV1AccountGetWithResponse(ctx context.Context, params *GetCredentialAccountApiV1AccountGetParams, reqEditors ...RequestEditorFn) (*GetCredentialAccountApiV1AccountGetResponse, error) {
+	rsp, err := c.GetCredentialAccountApiV1AccountGet(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetCredentialAccountApiV1AccountGetResponse(rsp)
+}
+
 // GetAccountConsumedApiV1AccountsAccountIdConsumedGetWithResponse Licence-enforced consumption for an account
 //
 // Units an account consumed over a window: the number its licence allowance is enforced against, summed over every workspace of the account.
@@ -29568,6 +29744,39 @@ func (c *ClientWithResponses) RunWorkflowWithBodyWithResponse(ctx context.Contex
 		return nil, err
 	}
 	return ParseRunWorkflowResponse(rsp)
+}
+
+// ParseGetCredentialAccountApiV1AccountGetResponse parses an HTTP response from a GetCredentialAccountApiV1AccountGetWithResponse call
+func ParseGetCredentialAccountApiV1AccountGetResponse(rsp *http.Response) (*GetCredentialAccountApiV1AccountGetResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetCredentialAccountApiV1AccountGetResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest CredentialAccount
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParseGetAccountConsumedApiV1AccountsAccountIdConsumedGetResponse parses an HTTP response from a GetAccountConsumedApiV1AccountsAccountIdConsumedGetWithResponse call

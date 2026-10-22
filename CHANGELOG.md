@@ -2,6 +2,13 @@
 
 All notable changes per release. Versions follow [semver](https://semver.org).
 
+## v0.3.0, 2026-10-22
+
+- Added the account lookup endpoint `GET /api/v1/account` with `Client.GetCredentialAccountApiV1AccountGet`, `ClientWithResponses.GetCredentialAccountApiV1AccountGetWithResponse`, `NewGetCredentialAccountApiV1AccountGetRequest` and `ParseGetCredentialAccountApiV1AccountGetResponse`. It returns the account and workspace of the calling credential.
+- Added the types `CredentialAccount` (with `AccountId` and `WorkspaceId`), `GetCredentialAccountApiV1AccountGetParams` (with `UnstructuredApiKey`) and `GetCredentialAccountApiV1AccountGetResponse`.
+- Added `GetCredentialAccountApiV1AccountGet` to `ClientInterface` and `GetCredentialAccountApiV1AccountGetWithResponse` to `ClientWithResponsesInterface`. Code that implements either interface, such as a mock, must add the new method. The `Client` and `ClientWithResponses` types already have it.
+- The partition spec moved from 1.5.132 to 1.5.137. It adds no change to the generated `partition` client.
+
 ## v0.2.0, 2026-10-21
 
 - Removed the OAuth fields `ClientId`, `ClientSecret`, `Scope`, `Token` and `TokenUrl` from `TeradataSourceConnectorConfig`, `TeradataSourceConnectorConfigInput`, `TeradataDestinationConnectorConfig` and `TeradataDestinationConnectorConfigInput`. The upstream spec no longer has them.
