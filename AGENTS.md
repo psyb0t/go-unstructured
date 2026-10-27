@@ -13,7 +13,7 @@ Both pipelines generate the whole spec. The downloaded and patched specs stay gi
 
 ## Stack
 
-- Go 1.26.9.
+- Go 1.26.10.
 - oapi-codegen v2.8.0, pinned as a `tool` dependency in `go.mod`.
 - Runtime: `github.com/oapi-codegen/runtime`.
 
