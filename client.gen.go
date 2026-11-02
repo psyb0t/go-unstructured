@@ -430,6 +430,7 @@ const (
 	NotificationEventTypeJobFailed          NotificationEventType = "job.failed"
 	NotificationEventTypeJobFirstFileFailed NotificationEventType = "job.first_file_failed"
 	NotificationEventTypeJobInProgress      NotificationEventType = "job.in_progress"
+	NotificationEventTypeJobNodeFinished    NotificationEventType = "job.node.finished"
 	NotificationEventTypeJobProgress        NotificationEventType = "job.progress"
 	NotificationEventTypeJobScheduled       NotificationEventType = "job.scheduled"
 	NotificationEventTypeJobStopped         NotificationEventType = "job.stopped"
@@ -445,6 +446,8 @@ func (e NotificationEventType) Valid() bool {
 	case NotificationEventTypeJobFirstFileFailed:
 		return true
 	case NotificationEventTypeJobInProgress:
+		return true
+	case NotificationEventTypeJobNodeFinished:
 		return true
 	case NotificationEventTypeJobProgress:
 		return true
@@ -884,6 +887,7 @@ type ConfluenceSourceConnectorConfig struct {
 	CloudId                   *string                    `json:"cloud_id,omitempty"`
 	ExtractFiles              *bool                      `json:"extract_files,omitempty"`
 	ExtractImages             *bool                      `json:"extract_images,omitempty"`
+	IncludeAttachments        *bool                      `json:"include_attachments,omitempty"`
 	MaxNumOfDocsFromEachSpace int                        `json:"max_num_of_docs_from_each_space"`
 	MaxNumOfSpaces            int                        `json:"max_num_of_spaces"`
 	OauthToken                *string                    `json:"oauth_token,omitempty"`
@@ -903,6 +907,7 @@ type ConfluenceSourceConnectorConfigInput struct {
 	CloudId                   *string                    `json:"cloud_id,omitempty"`
 	ExtractFiles              *bool                      `json:"extract_files,omitempty"`
 	ExtractImages             *bool                      `json:"extract_images,omitempty"`
+	IncludeAttachments        *bool                      `json:"include_attachments,omitempty"`
 	MaxNumOfDocsFromEachSpace *int                       `json:"max_num_of_docs_from_each_space,omitempty"`
 	MaxNumOfSpaces            *int                       `json:"max_num_of_spaces,omitempty"`
 	OauthToken                *string                    `json:"oauth_token,omitempty"`
@@ -1997,7 +2002,10 @@ type NodeFileMetadata struct {
 	NodeType    string `json:"node_type"`
 }
 
-// NotificationEventType Webhook event types derived from internal JOB_STATUSCHANGED_V1 statuses.
+// NotificationEventType Webhook event types a notification channel can subscribe to.
+//
+// The job lifecycle types are derived from JOB_STATUSCHANGED_V1 statuses; the rest
+// arrive decided on PLATFORM_EVENTS_V1 (see notification/event_registry.py).
 type NotificationEventType string
 
 // NotificationListResponse Paginated notification list response.
@@ -4124,6 +4132,14 @@ func (a *ConfluenceSourceConnectorConfig) UnmarshalJSON(b []byte) error {
 		delete(object, "extract_images")
 	}
 
+	if raw, found := object["include_attachments"]; found {
+		err = json.Unmarshal(raw, &a.IncludeAttachments)
+		if err != nil {
+			return fmt.Errorf("error reading 'include_attachments': %w", err)
+		}
+		delete(object, "include_attachments")
+	}
+
 	if raw, found := object["max_num_of_docs_from_each_space"]; found {
 		err = json.Unmarshal(raw, &a.MaxNumOfDocsFromEachSpace)
 		if err != nil {
@@ -4245,6 +4261,13 @@ func (a ConfluenceSourceConnectorConfig) MarshalJSON() ([]byte, error) {
 		object["extract_images"], err = json.Marshal(a.ExtractImages)
 		if err != nil {
 			return nil, fmt.Errorf("error marshaling 'extract_images': %w", err)
+		}
+	}
+
+	if a.IncludeAttachments != nil {
+		object["include_attachments"], err = json.Marshal(a.IncludeAttachments)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'include_attachments': %w", err)
 		}
 	}
 
@@ -4379,6 +4402,14 @@ func (a *ConfluenceSourceConnectorConfigInput) UnmarshalJSON(b []byte) error {
 		delete(object, "extract_images")
 	}
 
+	if raw, found := object["include_attachments"]; found {
+		err = json.Unmarshal(raw, &a.IncludeAttachments)
+		if err != nil {
+			return fmt.Errorf("error reading 'include_attachments': %w", err)
+		}
+		delete(object, "include_attachments")
+	}
+
 	if raw, found := object["max_num_of_docs_from_each_space"]; found {
 		err = json.Unmarshal(raw, &a.MaxNumOfDocsFromEachSpace)
 		if err != nil {
@@ -4502,6 +4533,13 @@ func (a ConfluenceSourceConnectorConfigInput) MarshalJSON() ([]byte, error) {
 		object["extract_images"], err = json.Marshal(a.ExtractImages)
 		if err != nil {
 			return nil, fmt.Errorf("error marshaling 'extract_images': %w", err)
+		}
+	}
+
+	if a.IncludeAttachments != nil {
+		object["include_attachments"], err = json.Marshal(a.IncludeAttachments)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'include_attachments': %w", err)
 		}
 	}
 

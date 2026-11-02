@@ -2,6 +2,13 @@
 
 All notable changes per release. Versions follow [semver](https://semver.org).
 
+## v0.3.3, 2026-11-02
+
+- Added `IncludeAttachments` to `ConfluenceSourceConnectorConfig` and `ConfluenceSourceConnectorConfigInput`. It is an optional `*bool` sent as `include_attachments`.
+- Added the notification event type `NotificationEventTypeJobNodeFinished` (`job.node.finished`), and `NotificationEventType.Valid` accepts it.
+- Updated the `NotificationEventType` doc comment to say it covers all event types a notification channel can subscribe to.
+- The partition spec moved from 1.5.137 to 1.5.138. It adds no change to the generated `partition` client.
+
 ## v0.3.2, 2026-10-28
 
 - Updated Semgrep in the development image to 1.182.1 and refreshed its locked dependencies. certifi 2026.10.23 drops the emSign root CAs whose intermediate keys were compromised (GHSA-6q48-6c7w-9gw2).
