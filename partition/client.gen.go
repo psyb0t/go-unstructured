@@ -185,7 +185,9 @@ type PartitionParameters struct {
 	// GzUncompressedContentType If file is gzipped, use this content type after unzipping.
 	GzUncompressedContentType *string `json:"gz_uncompressed_content_type,omitempty"`
 
-	// HiResModelName The name of the inference model used when strategy is hi_res
+	// HiResModelName The inference model used for hi_res. Default: layout_large_1.1.0 unless overridden by deployment configuration. YOLOX and layout_v1.x models are deprecated and run layout_large_1.1.0 instead; substitutions are reported in the X-Unstructured-Warnings response header.
+	//
+	// Example: layout_large_1.1.0
 	HiResModelName *string `json:"hi_res_model_name,omitempty"`
 
 	// IncludeOrigElements When a chunking strategy is specified, each returned chunk will include the elements consolidated to form that chunk as `.metadata.orig_elements`. Default: true.
@@ -625,6 +627,11 @@ type ClientWithResponsesInterface interface {
 	PartitionWithBodyWithResponse(ctx context.Context, params *PartitionParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PartitionResponse, error)
 }
 
+// PartitionResponse200Headers the declared response headers of an HTTP 200 response for Partition
+type PartitionResponse200Headers struct {
+	XUnstructuredWarnings *string
+}
+
 type PartitionResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -634,6 +641,8 @@ type PartitionResponse struct {
 	JSON422 *HTTPValidationError
 	// JSON5XX the response for an HTTP 5XX `application/json` response
 	JSON5XX *ServerError
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *PartitionResponse200Headers
 }
 
 // GetJSON200 returns the response for an HTTP 200 `application/json` response
@@ -733,6 +742,19 @@ func ParsePartitionResponse(rsp *http.Response) (*PartitionResponse, error) {
 	case rsp.StatusCode == 200:
 		// Content-type (text/csv) unsupported
 
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers PartitionResponse200Headers
+		if values := rsp.Header.Values("X-Unstructured-Warnings"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "X-Unstructured-Warnings", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.XUnstructuredWarnings = &value
+		}
+		response.Headers200 = &headers
 	}
 
 	return response, nil

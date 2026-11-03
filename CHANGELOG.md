@@ -2,6 +2,12 @@
 
 All notable changes per release. Versions follow [semver](https://semver.org).
 
+## v0.3.4, 2026-11-03
+
+- Added `PartitionResponse200Headers` with the field `XUnstructuredWarnings` (`*string`), and `PartitionResponse.Headers200`. `ParsePartitionResponse` fills it from the `X-Unstructured-Warnings` header of an HTTP 200 response.
+- Updated the `PartitionParameters.HiResModelName` doc comment. The default is `layout_large_1.1.0`, and YOLOX and `layout_v1.x` models are deprecated and run `layout_large_1.1.0` instead.
+- The partition spec moved from 1.5.138 to 1.5.141.
+
 ## v0.3.3, 2026-11-02
 
 - Added `IncludeAttachments` to `ConfluenceSourceConnectorConfig` and `ConfluenceSourceConnectorConfigInput`. It is an optional `*bool` sent as `include_attachments`.
