@@ -899,7 +899,7 @@ type ConfluenceSourceConnectorConfig struct {
 	OauthToken                *string                    `json:"oauth_token,omitempty"`
 	Password                  *string                    `json:"password,omitempty"`
 	RefreshToken              *string                    `json:"refresh_token,omitempty"`
-	Spaces                    *[]string                  `json:"spaces"`
+	Spaces                    *[]string                  `json:"spaces,omitempty"`
 	Token                     *string                    `json:"token,omitempty"`
 	Url                       string                     `json:"url"`
 	Username                  *string                    `json:"username,omitempty"`
@@ -1071,7 +1071,7 @@ type CreateWebhookChannelRequest struct {
 	// Secret Consumer-supplied signing secret (24-75 bytes)
 	Secret *string `json:"secret,omitempty"`
 
-	// Url Webhook endpoint URL (HTTPS required)
+	// Url Webhook endpoint URL
 	Url string `json:"url"`
 }
 
@@ -1401,6 +1401,9 @@ type FileStatus struct {
 	// Error Failure reason from the node the file is at, if any.
 	Error *string `json:"error,omitempty"`
 
+	// Notices Caveats a node reported while still succeeding, e.g. a skipped optional step. Empty when none.
+	Notices *[]FileStatusNotice `json:"notices,omitempty"`
+
 	// RecordId The source connector's identifier for the file. Usually a UUID derived from the path, but connector-defined: elsewhere a path or a document id.
 	RecordId string `json:"record_id"`
 
@@ -1427,6 +1430,15 @@ type FileStatusNode struct {
 	// TimeElapsed Seconds this file has spent at this node.
 	TimeElapsed *float64 `json:"time_elapsed,omitempty"`
 	Tries       *int     `json:"tries,omitempty"`
+}
+
+// FileStatusNotice A caveat a workflow step reported while still succeeding on a file.
+type FileStatusNotice struct {
+	// Message Human-readable detail. Free-form: show it to a person, never parse it.
+	Message string `json:"message"`
+
+	// NodeId Id of the workflow step that reported it. Identity only, join it against the workflow's DAG.
+	NodeId string `json:"node_id"`
 }
 
 // FileTooLargeResponse 413 body that names the ceiling that refused the file.
@@ -2619,7 +2631,7 @@ type UpdateChannelRequest struct {
 	// Secret Consumer-supplied signing secret (24-75 bytes). Pass empty string to remove custom secret.
 	Secret *string `json:"secret,omitempty"`
 
-	// Url Webhook endpoint URL (HTTPS required)
+	// Url Webhook endpoint URL
 	Url *string `json:"url,omitempty"`
 }
 

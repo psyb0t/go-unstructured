@@ -2,6 +2,12 @@
 
 All notable changes per release. Versions follow [semver](https://semver.org).
 
+## v0.3.6, 2026-11-05
+
+- Added `FileStatusNotice` with the fields `Message` and `NodeId`, and `FileStatus.Notices` (`*[]FileStatusNotice`). It lists caveats a workflow step reported while still succeeding on a file.
+- `ConfluenceSourceConnectorConfig.Spaces` is now sent with `omitempty`. A nil `Spaces` is left out of the JSON instead of being sent as `"spaces": null`.
+- Updated the `Url` doc comments on `CreateWebhookChannelRequest` and `UpdateChannelRequest`. They no longer say HTTPS is required.
+
 ## v0.3.5, 2026-11-05
 
 - Development image package installation uses HTTPS and bounded retries for signed snapshot indexes and package downloads.
