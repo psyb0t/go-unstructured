@@ -2,6 +2,11 @@
 
 All notable changes per release. Versions follow [semver](https://semver.org).
 
+## v0.3.5, 2026-11-05
+
+- Development image package installation uses HTTPS and bounded retries for signed snapshot indexes and package downloads.
+- Regenerated the Platform 3.3.0 client with source index ready/failed notification values, GCS ambient credentials and workflow key updates.
+
 ## v0.3.4, 2026-11-03
 
 - Added `PartitionResponse200Headers` with the field `XUnstructuredWarnings` (`*string`), and `PartitionResponse.Headers200`. `ParsePartitionResponse` fills it from the `X-Unstructured-Warnings` header of an HTTP 200 response.

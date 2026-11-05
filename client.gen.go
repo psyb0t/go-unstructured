@@ -434,6 +434,8 @@ const (
 	NotificationEventTypeJobProgress        NotificationEventType = "job.progress"
 	NotificationEventTypeJobScheduled       NotificationEventType = "job.scheduled"
 	NotificationEventTypeJobStopped         NotificationEventType = "job.stopped"
+	NotificationEventTypeSourceIndexFailed  NotificationEventType = "source.index.failed"
+	NotificationEventTypeSourceIndexReady   NotificationEventType = "source.index.ready"
 )
 
 // Valid indicates whether the value is a known member of the NotificationEventType enum.
@@ -454,6 +456,10 @@ func (e NotificationEventType) Valid() bool {
 	case NotificationEventTypeJobScheduled:
 		return true
 	case NotificationEventTypeJobStopped:
+		return true
+	case NotificationEventTypeSourceIndexFailed:
+		return true
+	case NotificationEventTypeSourceIndexReady:
 		return true
 	default:
 		return false
@@ -1079,7 +1085,7 @@ type CreateWorkflow struct {
 	// DestinationIds Destination connectors to bind, for workflows writing to more than one destination. Mutually exclusive with `destination_id`.
 	DestinationIds *[]string `json:"destination_ids,omitempty"`
 
-	// Key Stable workspace level identifier for the workflow. If omitted, derived from `name`. Immutable once set. 1-63 characters, lowercase alphanumeric and hyphens, no consecutive/leading/trailing hyphens.
+	// Key Stable workspace level identifier for the workflow. If omitted, derived from `name`. Can be changed later, except on a template. 1-63 characters, lowercase alphanumeric and hyphens, no consecutive/leading/trailing hyphens.
 	//
 	// Example: invoice-processing-v2
 	Key          *string                 `json:"key,omitempty"`
@@ -1435,6 +1441,7 @@ type FileTooLargeResponse struct {
 
 // GCSSourceConnectorConfig defines model for GCSSourceConnectorConfig.
 type GCSSourceConnectorConfig struct {
+	AmbientCredentials   *bool                                       `json:"ambient_credentials,omitempty"`
 	OauthClientId        *string                                     `json:"oauth_client_id,omitempty"`
 	OauthClientSecret    *string                                     `json:"oauth_client_secret,omitempty"`
 	OauthToken           *string                                     `json:"oauth_token,omitempty"`
@@ -1455,6 +1462,7 @@ type GCSSourceConnectorConfig_ServiceAccountKey struct {
 
 // GCSSourceConnectorConfigInput defines model for GCSSourceConnectorConfigInput.
 type GCSSourceConnectorConfigInput struct {
+	AmbientCredentials   *bool                                            `json:"ambient_credentials,omitempty"`
 	OauthClientId        *string                                          `json:"oauth_client_id,omitempty"`
 	OauthClientSecret    *string                                          `json:"oauth_client_secret,omitempty"`
 	OauthToken           *string                                          `json:"oauth_token,omitempty"`
@@ -2655,10 +2663,15 @@ type UpdateSourceConnector_Config struct {
 
 // UpdateWorkflow defines model for UpdateWorkflow.
 type UpdateWorkflow struct {
-	DestinationId *string                 `json:"destination_id,omitempty"`
-	Name          *string                 `json:"name,omitempty"`
-	ReprocessAll  *bool                   `json:"reprocess_all,omitempty"`
-	Schedule      *UpdateWorkflowSchedule `json:"schedule,omitempty"`
+	DestinationId *string `json:"destination_id,omitempty"`
+
+	// Key New workspace level identifier for the workflow. Omit or send null to leave it unchanged. A template's key cannot change. 1-63 characters, lowercase alphanumeric and hyphens, no consecutive/leading/trailing hyphens, not UUID-shaped. Requests that address the workflow by its old key return 404 after a rename, and importing an artifact that still carries the old key creates a new workflow.
+	//
+	// Example: invoice-processing-v3
+	Key          *string                 `json:"key,omitempty"`
+	Name         *string                 `json:"name,omitempty"`
+	ReprocessAll *bool                   `json:"reprocess_all,omitempty"`
+	Schedule     *UpdateWorkflowSchedule `json:"schedule,omitempty"`
 
 	// SkipPreflight Skip the job preflight check for this workflow. Omit to leave the current value unchanged.
 	SkipPreflight *bool           `json:"skip_preflight,omitempty"`
@@ -6620,6 +6633,14 @@ func (a *GCSSourceConnectorConfig) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
+	if raw, found := object["ambient_credentials"]; found {
+		err = json.Unmarshal(raw, &a.AmbientCredentials)
+		if err != nil {
+			return fmt.Errorf("error reading 'ambient_credentials': %w", err)
+		}
+		delete(object, "ambient_credentials")
+	}
+
 	if raw, found := object["oauth_client_id"]; found {
 		err = json.Unmarshal(raw, &a.OauthClientId)
 		if err != nil {
@@ -6694,6 +6715,13 @@ func (a *GCSSourceConnectorConfig) UnmarshalJSON(b []byte) error {
 func (a GCSSourceConnectorConfig) MarshalJSON() ([]byte, error) {
 	var err error
 	object := make(map[string]json.RawMessage)
+
+	if a.AmbientCredentials != nil {
+		object["ambient_credentials"], err = json.Marshal(a.AmbientCredentials)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'ambient_credentials': %w", err)
+		}
+	}
 
 	if a.OauthClientId != nil {
 		object["oauth_client_id"], err = json.Marshal(a.OauthClientId)
@@ -6774,6 +6802,14 @@ func (a *GCSSourceConnectorConfigInput) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
+	if raw, found := object["ambient_credentials"]; found {
+		err = json.Unmarshal(raw, &a.AmbientCredentials)
+		if err != nil {
+			return fmt.Errorf("error reading 'ambient_credentials': %w", err)
+		}
+		delete(object, "ambient_credentials")
+	}
+
 	if raw, found := object["oauth_client_id"]; found {
 		err = json.Unmarshal(raw, &a.OauthClientId)
 		if err != nil {
@@ -6848,6 +6884,13 @@ func (a *GCSSourceConnectorConfigInput) UnmarshalJSON(b []byte) error {
 func (a GCSSourceConnectorConfigInput) MarshalJSON() ([]byte, error) {
 	var err error
 	object := make(map[string]json.RawMessage)
+
+	if a.AmbientCredentials != nil {
+		object["ambient_credentials"], err = json.Marshal(a.AmbientCredentials)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'ambient_credentials': %w", err)
+		}
+	}
 
 	if a.OauthClientId != nil {
 		object["oauth_client_id"], err = json.Marshal(a.OauthClientId)
@@ -21318,7 +21361,7 @@ type ClientInterface interface {
 
 	// UpdateWorkflowWithBody Update Workflow
 	//
-	// Update an existing workflow's name, connectors, schedule, or workflow type.
+	// Update an existing workflow's name, key, connectors, schedule, or workflow type.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -21327,7 +21370,7 @@ type ClientInterface interface {
 
 	// UpdateWorkflow Update Workflow
 	//
-	// Update an existing workflow's name, connectors, schedule, or workflow type.
+	// Update an existing workflow's name, key, connectors, schedule, or workflow type.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -22400,7 +22443,7 @@ func (c *Client) GetWorkflow(ctx context.Context, workflowId string, params *Get
 
 // UpdateWorkflowWithBody Update Workflow
 //
-// Update an existing workflow's name, connectors, schedule, or workflow type.
+// Update an existing workflow's name, key, connectors, schedule, or workflow type.
 //
 // Takes any type of body and a specified content type.
 //
@@ -22419,7 +22462,7 @@ func (c *Client) UpdateWorkflowWithBody(ctx context.Context, workflowId string, 
 
 // UpdateWorkflow Update Workflow
 //
-// Update an existing workflow's name, connectors, schedule, or workflow type.
+// Update an existing workflow's name, key, connectors, schedule, or workflow type.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -26299,7 +26342,7 @@ type ClientWithResponsesInterface interface {
 
 	// UpdateWorkflowWithBodyWithResponse Update Workflow
 	//
-	// Update an existing workflow's name, connectors, schedule, or workflow type.
+	// Update an existing workflow's name, key, connectors, schedule, or workflow type.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -26308,7 +26351,7 @@ type ClientWithResponsesInterface interface {
 
 	// UpdateWorkflowWithResponse Update Workflow
 	//
-	// Update an existing workflow's name, connectors, schedule, or workflow type.
+	// Update an existing workflow's name, key, connectors, schedule, or workflow type.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -29587,7 +29630,7 @@ func (c *ClientWithResponses) GetWorkflowWithResponse(ctx context.Context, workf
 
 // UpdateWorkflowWithBodyWithResponse Update Workflow
 //
-// Update an existing workflow's name, connectors, schedule, or workflow type.
+// Update an existing workflow's name, key, connectors, schedule, or workflow type.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -29602,7 +29645,7 @@ func (c *ClientWithResponses) UpdateWorkflowWithBodyWithResponse(ctx context.Con
 
 // UpdateWorkflowWithResponse Update Workflow
 //
-// Update an existing workflow's name, connectors, schedule, or workflow type.
+// Update an existing workflow's name, key, connectors, schedule, or workflow type.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
