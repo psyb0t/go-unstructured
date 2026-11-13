@@ -1639,6 +1639,9 @@ type JobAggregations struct {
 	TotalDocs          *int `json:"total_docs,omitempty"`
 	TotalDocsFailed    *int `json:"total_docs_failed,omitempty"`
 	TotalDocsSucceeded *int `json:"total_docs_succeeded,omitempty"`
+
+	// TotalWarnings Pieces of work the job's notices reported as not done, e.g. enrichment that did not run after its retries were exhausted (the element count the notice states, else 1 per notice). Non-zero with no failed documents makes `processing_status` COMPLETED_WITH_ERRORS. See `warning_nodes` on the response for which steps.
+	TotalWarnings *int `json:"total_warnings,omitempty"`
 }
 
 // JobCompletionIssue Why a COMPLETED job delivered no document.
@@ -1700,6 +1703,9 @@ type JobDetails struct {
 	// QueuedBehindJobIdsSnapshot Job ids that held this workspace's concurrency slots at the instant this run was queued. Taken once and never refreshed, so the jobs named here may have finished long ago. It is not the set of jobs this run is waiting on, and it errs in both directions: runs queued ahead of this one but not yet started sit on the FIFO queue rather than in a slot, so they are absent; and the snapshot is taken at queue time whether or not the jobs it names are what kept this run waiting, since a held slot is not by itself the workspace being full at its `tenant_max_concurrent_jobs` limit. Show it as what held a slot at that moment, never as the cause of a delay or as a complete list of blockers. Null means no snapshot exists -- the run did not go through the queue, or the read failed -- which is not the same as `[]`, meaning the snapshot was taken and nothing held a slot. For what is running now, read `progress.other_active_jobs`, which is a live read.
 	QueuedBehindJobIdsSnapshot *[]string        `json:"queued_behind_job_ids_snapshot,omitempty"`
 	Summary                    *JobAggregations `json:"summary,omitempty"`
+
+	// WarningNodes Which steps reported notices, with how much work they reported undone (`num_notices`, counted as in `total_warnings`) and on how many documents (`num_docs`). Empty when none did. GET /jobs/{job_id}/file-status lists the notices per file.
+	WarningNodes *[]JobNoticeNode `json:"warning_nodes,omitempty"`
 }
 
 // JobFailedFiles defines model for JobFailedFiles.
@@ -1817,6 +1823,21 @@ type JobNodeDetails struct {
 //
 // An unrecognised value reads as UNKNOWN.
 type JobNodePhase string
+
+// JobNoticeNode One workflow node's share of the plugin notices a job's files carried.
+type JobNoticeNode struct {
+	// NodeId Id of the workflow node that reported them. Join it against the job's DAG.
+	NodeId string `json:"node_id"`
+
+	// NodeName That node's name.
+	NodeName *string `json:"node_name,omitempty"`
+
+	// NumDocs How many files carried at least one of them.
+	NumDocs *int `json:"num_docs,omitempty"`
+
+	// NumNotices How much work the node reported undone (see `total_warnings`).
+	NumNotices *int `json:"num_notices,omitempty"`
+}
 
 // JobProcessingStatus defines model for JobProcessingStatus.
 type JobProcessingStatus string
@@ -2996,6 +3017,8 @@ type GetJobFailedFilesParams struct {
 
 // GetJobFileStatusParams defines parameters for GetJobFileStatus.
 type GetJobFileStatusParams struct {
+	// HasWarnings true returns only files that carry a notice (non-empty `notices`), false only files that carry none. Omit for every file.
+	HasWarnings        *bool   `form:"has_warnings,omitempty" json:"has_warnings,omitempty"`
 	UnstructuredApiKey *string `json:"unstructured-api-key,omitempty"`
 }
 
@@ -21067,7 +21090,7 @@ type ClientInterface interface {
 
 	// GetJobFileStatus Get Job per-file processing status
 	//
-	// Retrieve the processing status of every file in a job: one entry per file, carrying its status for the whole job and the workflow step it currently sits at. Complements `/jobs/{job_id}/details`, which reports the same work as per-node counts, and `/jobs/{job_id}/failed-files`, which covers failures only. Call this endpoint at most 12 times per minute for each job and API key or JWT identity. For source-listed files, filter by `discovered_by_node_id`; that subset is complete when `index_finished` is true and `truncated` is false. Read the job status alongside this response because a failed source also counts as finished.
+	// Retrieve the processing status of every file in a job: one entry per file, carrying its status for the whole job and the workflow step it currently sits at, plus its `notices`; `has_warnings` keeps only the files that carry one. Complements `/jobs/{job_id}/details`, which reports the same work as per-node counts, and `/jobs/{job_id}/failed-files`, which covers failures only. Call this endpoint at most 12 times per minute for each job and API key or JWT identity. For source-listed files, filter by `discovered_by_node_id`; that subset is complete when `index_finished` is true and `truncated` is false. Read the job status alongside this response because a failed source also counts as finished.
 	//
 	// Corresponds with GET /api/v1/jobs/{job_id}/file-status (the `GetJobFileStatus` operationId).
 	GetJobFileStatus(ctx context.Context, jobId openapi_types.UUID, params *GetJobFileStatusParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -21827,7 +21850,7 @@ func (c *Client) GetJobFailedFiles(ctx context.Context, jobId openapi_types.UUID
 
 // GetJobFileStatus Get Job per-file processing status
 //
-// Retrieve the processing status of every file in a job: one entry per file, carrying its status for the whole job and the workflow step it currently sits at. Complements `/jobs/{job_id}/details`, which reports the same work as per-node counts, and `/jobs/{job_id}/failed-files`, which covers failures only. Call this endpoint at most 12 times per minute for each job and API key or JWT identity. For source-listed files, filter by `discovered_by_node_id`; that subset is complete when `index_finished` is true and `truncated` is false. Read the job status alongside this response because a failed source also counts as finished.
+// Retrieve the processing status of every file in a job: one entry per file, carrying its status for the whole job and the workflow step it currently sits at, plus its `notices`; `has_warnings` keeps only the files that carry one. Complements `/jobs/{job_id}/details`, which reports the same work as per-node counts, and `/jobs/{job_id}/failed-files`, which covers failures only. Call this endpoint at most 12 times per minute for each job and API key or JWT identity. For source-listed files, filter by `discovered_by_node_id`; that subset is complete when `index_finished` is true and `truncated` is false. Read the job status alongside this response because a failed source also counts as finished.
 //
 // Corresponds with GET /api/v1/jobs/{job_id}/file-status (the `GetJobFileStatus` operationId).
 func (c *Client) GetJobFileStatus(ctx context.Context, jobId openapi_types.UUID, params *GetJobFileStatusParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -23698,6 +23721,33 @@ func NewGetJobFileStatusRequest(server string, jobId openapi_types.UUID, params 
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.HasWarnings != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "has_warnings", *params.HasWarnings, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
 	}
 
 	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
@@ -26012,7 +26062,7 @@ type ClientWithResponsesInterface interface {
 
 	// GetJobFileStatusWithResponse Get Job per-file processing status
 	//
-	// Retrieve the processing status of every file in a job: one entry per file, carrying its status for the whole job and the workflow step it currently sits at. Complements `/jobs/{job_id}/details`, which reports the same work as per-node counts, and `/jobs/{job_id}/failed-files`, which covers failures only. Call this endpoint at most 12 times per minute for each job and API key or JWT identity. For source-listed files, filter by `discovered_by_node_id`; that subset is complete when `index_finished` is true and `truncated` is false. Read the job status alongside this response because a failed source also counts as finished.
+	// Retrieve the processing status of every file in a job: one entry per file, carrying its status for the whole job and the workflow step it currently sits at, plus its `notices`; `has_warnings` keeps only the files that carry one. Complements `/jobs/{job_id}/details`, which reports the same work as per-node counts, and `/jobs/{job_id}/failed-files`, which covers failures only. Call this endpoint at most 12 times per minute for each job and API key or JWT identity. For source-listed files, filter by `discovered_by_node_id`; that subset is complete when `index_finished` is true and `truncated` is false. Read the job status alongside this response because a failed source also counts as finished.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -29106,7 +29156,7 @@ func (c *ClientWithResponses) GetJobFailedFilesWithResponse(ctx context.Context,
 
 // GetJobFileStatusWithResponse Get Job per-file processing status
 //
-// Retrieve the processing status of every file in a job: one entry per file, carrying its status for the whole job and the workflow step it currently sits at. Complements `/jobs/{job_id}/details`, which reports the same work as per-node counts, and `/jobs/{job_id}/failed-files`, which covers failures only. Call this endpoint at most 12 times per minute for each job and API key or JWT identity. For source-listed files, filter by `discovered_by_node_id`; that subset is complete when `index_finished` is true and `truncated` is false. Read the job status alongside this response because a failed source also counts as finished.
+// Retrieve the processing status of every file in a job: one entry per file, carrying its status for the whole job and the workflow step it currently sits at, plus its `notices`; `has_warnings` keeps only the files that carry one. Complements `/jobs/{job_id}/details`, which reports the same work as per-node counts, and `/jobs/{job_id}/failed-files`, which covers failures only. Call this endpoint at most 12 times per minute for each job and API key or JWT identity. For source-listed files, filter by `discovered_by_node_id`; that subset is complete when `index_finished` is true and `truncated` is false. Read the job status alongside this response because a failed source also counts as finished.
 //
 // Returns a wrapper object for the known response body format(s).
 //

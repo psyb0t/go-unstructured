@@ -2,6 +2,14 @@
 
 All notable changes per release. Versions follow [semver](https://semver.org).
 
+## v0.3.7, 2026-11-13
+
+- Added `JobNoticeNode` with the fields `NodeId`, `NodeName`, `NumDocs` and `NumNotices`. It reports how much work one workflow node left undone.
+- Added `JobDetails.WarningNodes` (`*[]JobNoticeNode`) and `JobAggregations.TotalWarnings` (`*int`). A non-zero `TotalWarnings` with no failed documents makes `processing_status` COMPLETED_WITH_ERRORS.
+- Added `GetJobFileStatusParams.HasWarnings` (`*bool`), sent as `has_warnings`. True returns only files that carry a notice, false only files that carry none. The generated request builder encodes it.
+- Updated the doc comments on the job file-status methods to mention `notices` and `has_warnings`.
+- The development image uses Go 1.26.11 (`golang:1.26.11-trixie`), which fixes GO-2026-6859 in `net/http`.
+
 ## v0.3.6, 2026-11-05
 
 - Added `FileStatusNotice` with the fields `Message` and `NodeId`, and `FileStatus.Notices` (`*[]FileStatusNotice`). It lists caveats a workflow step reported while still succeeding on a file.
