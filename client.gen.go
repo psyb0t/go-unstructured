@@ -1132,12 +1132,15 @@ type DagNodeConnectionCheck struct {
 
 // DatabricksVDTDestinationConnectorConfig defines model for DatabricksVDTDestinationConnectorConfig.
 type DatabricksVDTDestinationConnectorConfig struct {
-	Catalog              string                     `json:"catalog"`
-	ClientId             *string                    `json:"client_id,omitempty"`
-	ClientSecret         *string                    `json:"client_secret,omitempty"`
-	Database             *string                    `json:"database,omitempty"`
-	HttpPath             string                     `json:"http_path"`
-	Schema               *string                    `json:"schema,omitempty"`
+	Catalog      string  `json:"catalog"`
+	ClientId     *string `json:"client_id,omitempty"`
+	ClientSecret *string `json:"client_secret,omitempty"`
+	Database     *string `json:"database,omitempty"`
+	HttpPath     string  `json:"http_path"`
+	Schema       *string `json:"schema,omitempty"`
+
+	// Scopes OAuth scopes the service principal requests. The Databricks SDK requests 'all-apis' when unset.
+	Scopes               *[]string                  `json:"scopes,omitempty"`
 	ServerHostname       string                     `json:"server_hostname"`
 	TableName            *string                    `json:"table_name,omitempty"`
 	Token                *string                    `json:"token,omitempty"`
@@ -1148,12 +1151,15 @@ type DatabricksVDTDestinationConnectorConfig struct {
 
 // DatabricksVDTDestinationConnectorConfigInput defines model for DatabricksVDTDestinationConnectorConfigInput.
 type DatabricksVDTDestinationConnectorConfigInput struct {
-	Catalog              string                     `json:"catalog"`
-	ClientId             *string                    `json:"client_id,omitempty"`
-	ClientSecret         *string                    `json:"client_secret,omitempty"`
-	Database             *string                    `json:"database,omitempty"`
-	HttpPath             string                     `json:"http_path"`
-	Schema               *string                    `json:"schema,omitempty"`
+	Catalog      string  `json:"catalog"`
+	ClientId     *string `json:"client_id,omitempty"`
+	ClientSecret *string `json:"client_secret,omitempty"`
+	Database     *string `json:"database,omitempty"`
+	HttpPath     string  `json:"http_path"`
+	Schema       *string `json:"schema,omitempty"`
+
+	// Scopes OAuth scopes the service principal requests. The Databricks SDK requests 'all-apis' when unset.
+	Scopes               *[]string                  `json:"scopes,omitempty"`
 	ServerHostname       string                     `json:"server_hostname"`
 	TableName            *string                    `json:"table_name,omitempty"`
 	Token                *string                    `json:"token,omitempty"`
@@ -1164,11 +1170,14 @@ type DatabricksVDTDestinationConnectorConfigInput struct {
 
 // DatabricksVolumesConnectorConfig defines model for DatabricksVolumesConnectorConfig.
 type DatabricksVolumesConnectorConfig struct {
-	Catalog              string                     `json:"catalog"`
-	ClientId             *string                    `json:"client_id,omitempty"`
-	ClientSecret         *string                    `json:"client_secret,omitempty"`
-	Host                 string                     `json:"host"`
-	Schema               *string                    `json:"schema,omitempty"`
+	Catalog      string  `json:"catalog"`
+	ClientId     *string `json:"client_id,omitempty"`
+	ClientSecret *string `json:"client_secret,omitempty"`
+	Host         string  `json:"host"`
+	Schema       *string `json:"schema,omitempty"`
+
+	// Scopes OAuth scopes the service principal requests. The Databricks SDK requests 'all-apis' when unset.
+	Scopes               *[]string                  `json:"scopes,omitempty"`
 	Token                *string                    `json:"token,omitempty"`
 	Volume               string                     `json:"volume"`
 	VolumePath           string                     `json:"volume_path"`
@@ -1177,11 +1186,14 @@ type DatabricksVolumesConnectorConfig struct {
 
 // DatabricksVolumesConnectorConfigInput defines model for DatabricksVolumesConnectorConfigInput.
 type DatabricksVolumesConnectorConfigInput struct {
-	Catalog              string                     `json:"catalog"`
-	ClientId             *string                    `json:"client_id,omitempty"`
-	ClientSecret         *string                    `json:"client_secret,omitempty"`
-	Host                 string                     `json:"host"`
-	Schema               *string                    `json:"schema,omitempty"`
+	Catalog      string  `json:"catalog"`
+	ClientId     *string `json:"client_id,omitempty"`
+	ClientSecret *string `json:"client_secret,omitempty"`
+	Host         string  `json:"host"`
+	Schema       *string `json:"schema,omitempty"`
+
+	// Scopes OAuth scopes the service principal requests. The Databricks SDK requests 'all-apis' when unset.
+	Scopes               *[]string                  `json:"scopes,omitempty"`
 	Token                *string                    `json:"token,omitempty"`
 	Volume               string                     `json:"volume"`
 	VolumePath           string                     `json:"volume_path"`
@@ -5352,6 +5364,14 @@ func (a *DatabricksVDTDestinationConnectorConfig) UnmarshalJSON(b []byte) error 
 		delete(object, "schema")
 	}
 
+	if raw, found := object["scopes"]; found {
+		err = json.Unmarshal(raw, &a.Scopes)
+		if err != nil {
+			return fmt.Errorf("error reading 'scopes': %w", err)
+		}
+		delete(object, "scopes")
+	}
+
 	if raw, found := object["server_hostname"]; found {
 		err = json.Unmarshal(raw, &a.ServerHostname)
 		if err != nil {
@@ -5446,6 +5466,13 @@ func (a DatabricksVDTDestinationConnectorConfig) MarshalJSON() ([]byte, error) {
 		object["schema"], err = json.Marshal(a.Schema)
 		if err != nil {
 			return nil, fmt.Errorf("error marshaling 'schema': %w", err)
+		}
+	}
+
+	if a.Scopes != nil {
+		object["scopes"], err = json.Marshal(a.Scopes)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'scopes': %w", err)
 		}
 	}
 
@@ -5562,6 +5589,14 @@ func (a *DatabricksVDTDestinationConnectorConfigInput) UnmarshalJSON(b []byte) e
 		delete(object, "schema")
 	}
 
+	if raw, found := object["scopes"]; found {
+		err = json.Unmarshal(raw, &a.Scopes)
+		if err != nil {
+			return fmt.Errorf("error reading 'scopes': %w", err)
+		}
+		delete(object, "scopes")
+	}
+
 	if raw, found := object["server_hostname"]; found {
 		err = json.Unmarshal(raw, &a.ServerHostname)
 		if err != nil {
@@ -5656,6 +5691,13 @@ func (a DatabricksVDTDestinationConnectorConfigInput) MarshalJSON() ([]byte, err
 		object["schema"], err = json.Marshal(a.Schema)
 		if err != nil {
 			return nil, fmt.Errorf("error marshaling 'schema': %w", err)
+		}
+	}
+
+	if a.Scopes != nil {
+		object["scopes"], err = json.Marshal(a.Scopes)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'scopes': %w", err)
 		}
 	}
 
@@ -5764,6 +5806,14 @@ func (a *DatabricksVolumesConnectorConfig) UnmarshalJSON(b []byte) error {
 		delete(object, "schema")
 	}
 
+	if raw, found := object["scopes"]; found {
+		err = json.Unmarshal(raw, &a.Scopes)
+		if err != nil {
+			return fmt.Errorf("error reading 'scopes': %w", err)
+		}
+		delete(object, "scopes")
+	}
+
 	if raw, found := object["token"]; found {
 		err = json.Unmarshal(raw, &a.Token)
 		if err != nil {
@@ -5835,6 +5885,13 @@ func (a DatabricksVolumesConnectorConfig) MarshalJSON() ([]byte, error) {
 		object["schema"], err = json.Marshal(a.Schema)
 		if err != nil {
 			return nil, fmt.Errorf("error marshaling 'schema': %w", err)
+		}
+	}
+
+	if a.Scopes != nil {
+		object["scopes"], err = json.Marshal(a.Scopes)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'scopes': %w", err)
 		}
 	}
 
@@ -5929,6 +5986,14 @@ func (a *DatabricksVolumesConnectorConfigInput) UnmarshalJSON(b []byte) error {
 		delete(object, "schema")
 	}
 
+	if raw, found := object["scopes"]; found {
+		err = json.Unmarshal(raw, &a.Scopes)
+		if err != nil {
+			return fmt.Errorf("error reading 'scopes': %w", err)
+		}
+		delete(object, "scopes")
+	}
+
 	if raw, found := object["token"]; found {
 		err = json.Unmarshal(raw, &a.Token)
 		if err != nil {
@@ -6000,6 +6065,13 @@ func (a DatabricksVolumesConnectorConfigInput) MarshalJSON() ([]byte, error) {
 		object["schema"], err = json.Marshal(a.Schema)
 		if err != nil {
 			return nil, fmt.Errorf("error marshaling 'schema': %w", err)
+		}
+	}
+
+	if a.Scopes != nil {
+		object["scopes"], err = json.Marshal(a.Scopes)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'scopes': %w", err)
 		}
 	}
 

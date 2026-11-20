@@ -2,6 +2,11 @@
 
 All notable changes per release. Versions follow [semver](https://semver.org).
 
+## v0.3.8, 2026-11-20
+
+- Added `Scopes` (`*[]string`) to `DatabricksVDTDestinationConnectorConfig`, `DatabricksVDTDestinationConnectorConfigInput`, `DatabricksVolumesConnectorConfig` and `DatabricksVolumesConnectorConfigInput`. It sets the OAuth scopes the service principal requests, sent as `scopes`. The Databricks SDK requests `all-apis` when it is unset.
+- The generated JSON marshal and unmarshal code for the two Databricks connector configs reads and writes `scopes`.
+
 ## v0.3.7, 2026-11-13
 
 - Added `JobNoticeNode` with the fields `NodeId`, `NodeName`, `NumDocs` and `NumNotices`. It reports how much work one workflow node left undone.
