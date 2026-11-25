@@ -1265,7 +1265,7 @@ type DropboxSourceConnectorConfig struct {
 	Recursive            bool                       `json:"recursive"`
 	RefreshToken         *string                    `json:"refresh_token,omitempty"`
 	RemoteUrl            string                     `json:"remote_url"`
-	Token                string                     `json:"token"`
+	Token                *string                    `json:"token,omitempty"`
 	AdditionalProperties map[string]json.RawMessage `json:"-"`
 }
 
@@ -6404,9 +6404,11 @@ func (a DropboxSourceConnectorConfig) MarshalJSON() ([]byte, error) {
 		return nil, fmt.Errorf("error marshaling 'remote_url': %w", err)
 	}
 
-	object["token"], err = json.Marshal(a.Token)
-	if err != nil {
-		return nil, fmt.Errorf("error marshaling 'token': %w", err)
+	if a.Token != nil {
+		object["token"], err = json.Marshal(a.Token)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'token': %w", err)
+		}
 	}
 
 	for fieldName, field := range a.AdditionalProperties {

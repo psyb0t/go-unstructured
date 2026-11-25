@@ -2,6 +2,11 @@
 
 All notable changes per release. Versions follow [semver](https://semver.org).
 
+## v0.4.0, 2026-11-25
+
+- Changed `DropboxSourceConnectorConfig.Token` from `string` to `*string`. Callers that assign or read `Token` must pass or dereference a pointer.
+- `Token` is now sent with `omitempty`. The generated `MarshalJSON` leaves `token` out when `Token` is nil instead of sending an empty string.
+
 ## v0.3.8, 2026-11-20
 
 - Added `Scopes` (`*[]string`) to `DatabricksVDTDestinationConnectorConfig`, `DatabricksVDTDestinationConnectorConfigInput`, `DatabricksVolumesConnectorConfig` and `DatabricksVolumesConnectorConfigInput`. It sets the OAuth scopes the service principal requests, sent as `scopes`. The Databricks SDK requests `all-apis` when it is unset.
